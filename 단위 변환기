@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>단위 변환기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: #0f172a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .converter-card {
+            background: #1e293b;
+            padding: 30px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 480px;
+            border: 1px solid #334155;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #f8fafc;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus, input:focus {
+            border-color: #38bdf8;
+        }
+
+        .unit-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .equals {
+            font-size: 1.5rem;
+            color: #38bdf8;
+            font-weight: bold;
+        }
+
+        .result-box {
+            background-color: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #38bdf8;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="converter-card">
+        <h1>📐 단위 변환기</h1>
+
+        <!-- 카테고리 선택 -->
+        <div class="form-group">
+            <label for="category">변환 종류</label>
+            <select id="category" onchange="updateUnits()">
+                <option value="length">길이 (m, cm, km, inch, ft)</option>
+                <option value="area">넓이 (m², 평, ft²)</option>
+                <option value="weight">무게 (kg, g, lb, oz)</option>
+                <option value="temp">온도 (°C, °F, K)</option>
+            </select>
+        </div>
+
+        <!-- 입력 값 및 단위 선택 -->
+        <div class="form-group">
+            <label for="inputValue">값 입력</label>
+            <input type="number" id="inputValue" value="1" placeholder="숫자 입력" oninput="convert()">
+        </div>
+
+        <div class="form-group">
+            <label>단위 선택</label>
+            <div class="unit-group">
+                <select id="fromUnit" onchange="convert()"></select>
+                <span class="equals">➔</span>
+                <select id="toUnit" onchange="convert()"></select>
+            </div>
+        </div>
+
+        <!-- 변환 결과 -->
+        <div class="form-group">
+            <label>변환 결과</label>
+            <div id="result" class="result-box">1 m = 100 cm</div>
+        </div>
+    </div>
+
+    <script>
+        // 카테고리별 단위 및 기본 단위(Base Unit) 기준 변환 비율 정의
+        const unitData = {
+            length: {
+                units: { 'm': '미터 (m)', 'cm': '센티미터 (cm)', 'km': '킬로미터 (km)', 'inch': '인치 (in)', 'ft': '피트 (ft)' },
+                // 기준 단위: m
+                rates: { 'm': 1, 'cm': 0.01, 'km': 1000, 'inch': 0.0254, 'ft': 0.3048 }
+            },
+            area: {
+                units: { 'm2': '제곱미터 (m²)', 'pyeong': '평', 'ft2': '제곱피트 (ft²)' },
+                // 기준 단위: m²
+                rates: { 'm2': 1, 'pyeong': 3.305785, 'ft2': 0.092903 }
+            },
+            weight: {
+                units: { 'kg': '킬로그램 (kg)', 'g': '그램 (g)', 'lb': '파운드 (lb)', 'oz': '온스 (oz)' },
+                // 기준 단위: kg
+                rates: { 'kg': 1, 'g': 0.001, 'lb': 0.453592, 'oz': 0.0283495 }
+            },
+            temp: {
+                units: { 'C': '섭씨 (°C)', 'F': '화씨 (°F)', 'K': '켈빈 (K)' }
+            }
+        };
+
+        // 드롭다운 옵션 업데이트
+        function updateUnits() {
+            const category = document.getElementById('category').value;
+            const fromSelect = document.getElementById('fromUnit');
+            const toSelect = document.getElementById('toUnit');
+            const units = unitData[category].units;
+
+            fromSelect.innerHTML = '';
+            toSelect.innerHTML = '';
+
+            let keys = Object.keys(units);
+            keys.forEach((key, index) => {
+                fromSelect.add(new Option(units[key], key));
+                toSelect.add(new Option(units[key], key));
+            });
+
+            // 기본값으로 첫 번째와 두 번째 단위 선택
+            if (keys.length > 1) {
+                toSelect.selectedIndex = 1;
+            }
+
+            convert();
+        }
+
+        // 단위 변환 로직
+        function convert() {
+            const category = document.getElementById('category').value;
+            const val = parseFloat(document.getElementById('inputValue').value);
+            const from = document.getElementById('fromUnit').value;
+            const to = document.getElementById('toUnit').value;
+            const resultBox = document.getElementById('result');
+
+            if (isNaN(val)) {
+                resultBox.textContent = '숫자를 입력해주세요';
+                return;
+            }
+
+            let result = 0;
+
+            if (category === 'temp') {
+                // 온도 변환 예외 처리
+                result = convertTemperature(val, from, to);
+            } else {
+                // 일반 비례 변환 (기준 단위로 변환 후 목적 단위로 재변환)
+                const rates = unitData[category].rates;
+                const baseValue = val * rates[from]; // 기준 단위로 변환
+                result = baseValue / rates[to];      // 목적 단위로 변환
+            }
+
+            // 결과 출력 (소수점 정리)
+            const formattedResult = Number.isInteger(result) ? result : result.toFixed(4);
+            resultBox.textContent = `${val} ${from} = ${formattedResult} ${to}`;
+        }
+
+        // 온도 전용 변환 함수
+        function convertTemperature(val, from, to) {
+            if (from === to) return val;
+
+            // 1. 기준 단위(섭씨)로 변환
+            let celsius = 0;
+            if (from === 'C') celsius = val;
+            else if (from === 'F') celsius = (val - 32) * (5 / 9);
+            else if (from === 'K') celsius = val - 273.15;
+
+            // 2. 섭씨에서 목적 단위로 변환
+            if (to === 'C') return celsius;
+            if (to === 'F') return (celsius * 9 / 5) + 32;
+            if (to === 'K') return celsius + 273.15;
+        }
+
+        // 초기화 실행
+        updateUnits();
+    </script>
+
+</body>
+</html>
