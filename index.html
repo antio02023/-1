@@ -3,228 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>단위 변환기</title>
+    <title>Beam Deflection & Stress Calculator</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary-color: #2563eb;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
         }
-
         body {
-            min-height: 100vh;
-            background-color: #0f172a;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
             padding: 20px;
         }
-
-        .converter-card {
-            background: #1e293b;
-            padding: 30px 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            max-width: 480px;
-            border: 1px solid #334155;
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
-
-        h1 {
-            font-size: 1.8rem;
-            margin-bottom: 20px;
-            text-align: center;
-            color: #f8fafc;
+        h1 { text-align: center; color: var(--primary-color); margin-bottom: 25px; }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
         }
-
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
-
         label {
             display: block;
-            font-size: 0.9rem;
-            color: #94a3b8;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
         }
-
         select, input {
             width: 100%;
-            padding: 12px 15px;
-            border-radius: 8px;
-            border: 1px solid #334155;
-            background-color: #0f172a;
-            color: #ffffff;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.2s;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
         }
-
-        select:focus, input:focus {
-            border-color: #38bdf8;
-        }
-
-        .unit-group {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .equals {
-            font-size: 1.5rem;
-            color: #38bdf8;
+        button {
+            grid-column: span 2;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
             font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
         }
-
-        .result-box {
-            background-color: #0f172a;
-            padding: 15px;
+        button:hover { background-color: #1d4ed8; }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f1f5f9;
             border-radius: 8px;
-            border: 1px solid #334155;
-            text-align: center;
-            font-size: 1.2rem;
+        }
+        .results h3 { margin-top: 0; color: #334155; }
+        .result-item {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        .result-val {
             font-weight: bold;
-            color: #38bdf8;
-            margin-top: 10px;
+            color: var(--primary-color);
         }
     </style>
 </head>
 <body>
 
-    <div class="converter-card">
-        <h1>📐 단위 변환기</h1>
-
-        <!-- 카테고리 선택 -->
+<div class="container">
+    <h1>Beam Deflection & Stress Calculator</h1>
+    <div class="form-grid">
         <div class="form-group">
-            <label for="category">변환 종류</label>
-            <select id="category" onchange="updateUnits()">
-                <option value="length">길이 (m, cm, km, inch, ft)</option>
-                <option value="area">넓이 (m², 평, ft²)</option>
-                <option value="weight">무게 (kg, g, lb, oz)</option>
-                <option value="temp">온도 (°C, °F, K)</option>
+            <label for="beamType">보의 종류 (Beam Type)</label>
+            <select id="beamType">
+                <option value="cantilever_end">외팔보 (Cantilever - End Load)</option>
+                <option value="simply_center">단순보 (Simply Supported - Center Load)</option>
             </select>
         </div>
-
-        <!-- 입력 값 및 단위 선택 -->
         <div class="form-group">
-            <label for="inputValue">값 입력</label>
-            <input type="number" id="inputValue" value="1" placeholder="숫자 입력" oninput="convert()">
+            <label for="loadType">단면 형상 (Cross Section)</label>
+            <select id="sectionType">
+                <option value="rect">직사각형 (Rectangular)</option>
+                <option value="circle">원형 (Circular)</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="length">보의 길이 L (m)</label>
+            <input type="number" id="length" value="2.0" step="0.1">
+        </div>
+        <div class="form-group">
+            <label for="load">하중 P (N)</label>
+            <input type="number" id="load" value="1000" step="10">
+        </div>
+        
+        <div class="form-group">
+            <label for="elastic">탄성계수 E (GPa)</label>
+            <input type="number" id="elastic" value="200" step="1">
+        </div>
+        <div class="form-group" id="group_b">
+            <label for="width">너비 b (mm)</label>
+            <input type="number" id="width" value="50" step="1">
+        </div>
+        <div class="form-group" id="group_h">
+            <label for="height">높이 h (mm)</label>
+            <input type="number" id="height" value="100" step="1">
         </div>
 
-        <div class="form-group">
-            <label>단위 선택</label>
-            <div class="unit-group">
-                <select id="fromUnit" onchange="convert()"></select>
-                <span class="equals">➔</span>
-                <select id="toUnit" onchange="convert()"></select>
-            </div>
-        </div>
-
-        <!-- 변환 결과 -->
-        <div class="form-group">
-            <label>변환 결과</label>
-            <div id="result" class="result-box">1 m = 100 cm</div>
-        </div>
+        <button onclick="calculate()">계산하기 (Calculate)</button>
     </div>
 
-    <script>
-        // 카테고리별 단위 및 기본 단위(Base Unit) 기준 변환 비율 정의
-        const unitData = {
-            length: {
-                units: { 'm': '미터 (m)', 'cm': '센티미터 (cm)', 'km': '킬로미터 (km)', 'inch': '인치 (in)', 'ft': '피트 (ft)' },
-                // 기준 단위: m
-                rates: { 'm': 1, 'cm': 0.01, 'km': 1000, 'inch': 0.0254, 'ft': 0.3048 }
-            },
-            area: {
-                units: { 'm2': '제곱미터 (m²)', 'pyeong': '평', 'ft2': '제곱피트 (ft²)' },
-                // 기준 단위: m²
-                rates: { 'm2': 1, 'pyeong': 3.305785, 'ft2': 0.092903 }
-            },
-            weight: {
-                units: { 'kg': '킬로그램 (kg)', 'g': '그램 (g)', 'lb': '파운드 (lb)', 'oz': '온스 (oz)' },
-                // 기준 단위: kg
-                rates: { 'kg': 1, 'g': 0.001, 'lb': 0.453592, 'oz': 0.0283495 }
-            },
-            temp: {
-                units: { 'C': '섭씨 (°C)', 'F': '화씨 (°F)', 'K': '켈빈 (K)' }
-            }
-        };
+    <div class="results" id="resultBox">
+        <h3>결과 (Results)</h3>
+        <div class="result-item">최대 처짐량 ($\delta_{max}$): <span id="resDeflection" class="result-val">-</span> mm</div>
+        <div class="result-item">최대 굽힘 응력 ($\sigma_{max}$): <span id="resStress" class="result-val">-</span> MPa</div>
+    </div>
+</div>
 
-        // 드롭다운 옵션 업데이트
-        function updateUnits() {
-            const category = document.getElementById('category').value;
-            const fromSelect = document.getElementById('fromUnit');
-            const toSelect = document.getElementById('toUnit');
-            const units = unitData[category].units;
+<script>
+    // 단면 형상 변경 시 라벨 변경
+    document.getElementById('sectionType').addEventListener('change', function() {
+        const type = this.value;
+        const labelB = document.querySelector('label[for="width"]');
+        const labelH = document.querySelector('label[for="height"]');
+        if(type === 'circle') {
+            labelB.innerText = "직경 d (mm)";
+            labelH.style.display = "none";
+            document.getElementById('height').style.display = "none";
+        } else {
+            labelB.innerText = "너비 b (mm)";
+            labelH.style.display = "block";
+            document.getElementById('height').style.display = "block";
+        }
+    });
 
-            fromSelect.innerHTML = '';
-            toSelect.innerHTML = '';
+    function calculate() {
+        const beamType = document.getElementById('beamType').value;
+        const sectionType = document.getElementById('sectionType').value;
+        const L = parseFloat(document.getElementById('length')); // m
+        const rawL = parseFloat(document.getElementById('length').value);
+        const P = parseFloat(document.getElementById('load').value); // N
+        const E_gpa = parseFloat(document.getElementById('elastic').value); // GPa
+        const E = E_gpa * 1e9; // Pa (N/m^2)
+        
+        let I = 0; // 단면2차모멘트 (m^4)
+        let c = 0; // 중립축에서 최외곽까지 거리 (m)
 
-            let keys = Object.keys(units);
-            keys.forEach((key, index) => {
-                fromSelect.add(new Option(units[key], key));
-                toSelect.add(new Option(units[key], key));
-            });
-
-            // 기본값으로 첫 번째와 두 번째 단위 선택
-            if (keys.length > 1) {
-                toSelect.selectedIndex = 1;
-            }
-
-            convert();
+        if(sectionType === 'rect') {
+            const b = parseFloat(document.getElementById('width').value) * 1e-3; // m
+            const h = parseFloat(document.getElementById('height').value) * 1e-3; // m
+            I = (b * Math.pow(h, 3)) / 12;
+            c = h / 2;
+        } else {
+            const d = parseFloat(document.getElementById('width').value) * 1e-3; // m
+            I = (Math.PI * Math.pow(d, 4)) / 64;
+            c = d / 2;
         }
 
-        // 단위 변환 로직
-        function convert() {
-            const category = document.getElementById('category').value;
-            const val = parseFloat(document.getElementById('inputValue').value);
-            const from = document.getElementById('fromUnit').value;
-            const to = document.getElementById('toUnit').value;
-            const resultBox = document.getElementById('result');
+        let maxDeflection = 0; // m
+        let maxMoment = 0; // N·m
 
-            if (isNaN(val)) {
-                resultBox.textContent = '숫자를 입력해주세요';
-                return;
-            }
-
-            let result = 0;
-
-            if (category === 'temp') {
-                // 온도 변환 예외 처리
-                result = convertTemperature(val, from, to);
-            } else {
-                // 일반 비례 변환 (기준 단위로 변환 후 목적 단위로 재변환)
-                const rates = unitData[category].rates;
-                const baseValue = val * rates[from]; // 기준 단위로 변환
-                result = baseValue / rates[to];      // 목적 단위로 변환
-            }
-
-            // 결과 출력 (소수점 정리)
-            const formattedResult = Number.isInteger(result) ? result : result.toFixed(4);
-            resultBox.textContent = `${val} ${from} = ${formattedResult} ${to}`;
+        if(beamType === 'cantilever_end') {
+            // 외팔보 끝단 집중하중
+            maxDeflection = (P * Math.pow(rawL, 3)) / (3 * E * I);
+            maxMoment = P * rawL;
+        } else {
+            // 단순보 중앙 집중하중
+            maxDeflection = (P * Math.pow(rawL, 3)) / (48 * E * I);
+            maxMoment = (P * rawL) / 4;
         }
 
-        // 온도 전용 변환 함수
-        function convertTemperature(val, from, to) {
-            if (from === to) return val;
+        const maxStress = (maxMoment * c) / I; // Pa
+        const maxStressMPa = maxStress / 1e6; // MPa
+        const maxDeflectionMm = maxDeflection * 1e3; // mm
 
-            // 1. 기준 단위(섭씨)로 변환
-            let celsius = 0;
-            if (from === 'C') celsius = val;
-            else if (from === 'F') celsius = (val - 32) * (5 / 9);
-            else if (from === 'K') celsius = val - 273.15;
-
-            // 2. 섭씨에서 목적 단위로 변환
-            if (to === 'C') return celsius;
-            if (to === 'F') return (celsius * 9 / 5) + 32;
-            if (to === 'K') return celsius + 273.15;
-        }
-
-        // 초기화 실행
-        updateUnits();
-    </script>
+        document.getElementById('resDeflection').innerText = maxDeflectionMm.toFixed(4);
+        document.getElementById('resStress').innerText = maxStressMPa.toFixed(4);
+    }
+</script>
 
 </body>
 </html>
