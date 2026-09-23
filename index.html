@@ -19,7 +19,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 800px;
+            max-width: 850px;
             margin: 0 auto;
             background: var(--card-bg);
             padding: 30px;
@@ -35,6 +35,9 @@
         .form-group {
             margin-bottom: 15px;
         }
+        .full-width {
+            grid-column: span 2;
+        }
         label {
             display: block;
             margin-bottom: 6px;
@@ -42,12 +45,22 @@
             font-size: 14px;
         }
         select, input {
-            width: 100%;
             padding: 10px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             box-sizing: border-box;
             font-size: 14px;
+        }
+        select { width: 100%; }
+        .input-group {
+            display: flex;
+            gap: 8px;
+        }
+        .input-group input {
+            flex: 2;
+        }
+        .input-group select {
+            flex: 1;
         }
         button {
             grid-column: span 2;
@@ -92,7 +105,7 @@
             </select>
         </div>
         <div class="form-group">
-            <label for="loadType">단면 형상 (Cross Section)</label>
+            <label for="sectionType">단면 형상 (Cross Section)</label>
             <select id="sectionType">
                 <option value="rect">직사각형 (Rectangular)</option>
                 <option value="circle">원형 (Circular)</option>
@@ -100,25 +113,61 @@
         </div>
         
         <div class="form-group">
-            <label for="length">보의 길이 L (m)</label>
-            <input type="number" id="length" value="2.0" step="0.1">
+            <label for="length">보의 길이 L</label>
+            <div class="input-group">
+                <input type="number" id="length" value="2.0" step="0.1">
+                <select id="unitLength">
+                    <option value="1">m</option>
+                    <option value="0.01">cm</option>
+                    <option value="0.001">mm</option>
+                </select>
+            </div>
         </div>
+
         <div class="form-group">
-            <label for="load">하중 P (N)</label>
-            <input type="number" id="load" value="1000" step="10">
+            <label for="load">하중 P</label>
+            <div class="input-group">
+                <input type="number" id="load" value="1000" step="10">
+                <select id="unitLoad">
+                    <option value="1">N</option>
+                    <option value="1000">kN</option>
+                </select>
+            </div>
         </div>
         
         <div class="form-group">
-            <label for="elastic">탄성계수 E (GPa)</label>
-            <input type="number" id="elastic" value="200" step="1">
+            <label for="elastic">탄성계수 E</label>
+            <div class="input-group">
+                <input type="number" id="elastic" value="200" step="1">
+                <select id="unitElastic">
+                    <option value="1e9">GPa</option>
+                    <option value="1e6">MPa</option>
+                </select>
+            </div>
         </div>
+
         <div class="form-group" id="group_b">
-            <label for="width">너비 b (mm)</label>
-            <input type="number" id="width" value="50" step="1">
+            <label for="width" id="labelWidth">너비 b</label>
+            <div class="input-group">
+                <input type="number" id="width" value="50" step="1">
+                <select id="unitWidth">
+                    <option value="0.001">mm</option>
+                    <option value="0.01">cm</option>
+                    <option value="1">m</option>
+                </select>
+            </div>
         </div>
+
         <div class="form-group" id="group_h">
-            <label for="height">높이 h (mm)</label>
-            <input type="number" id="height" value="100" step="1">
+            <label for="height">높이 h</label>
+            <div class="input-group">
+                <input type="number" id="height" value="100" step="1">
+                <select id="unitHeight">
+                    <option value="0.001">mm</option>
+                    <option value="0.01">cm</option>
+                    <option value="1">m</option>
+                </select>
+            </div>
         </div>
 
         <button onclick="calculate()">계산하기 (Calculate)</button>
@@ -126,67 +175,63 @@
 
     <div class="results" id="resultBox">
         <h3>결과 (Results)</h3>
-        <div class="result-item">최대 처짐량 ($\delta_{max}$): <span id="resDeflection" class="result-val">-</span> mm</div>
-        <div class="result-item">최대 굽힘 응력 ($\sigma_{max}$): <span id="resStress" class="result-val">-</span> MPa</div>
+        <div class="result-item">최대 처짐량: <span id="resDeflection" class="result-val">-</span> mm</div>
+        <div class="result-item">최대 굽힘 응력: <span id="resStress" class="result-val">-</span> MPa</div>
     </div>
 </div>
 
 <script>
-    // 단면 형상 변경 시 라벨 변경
+    // 단면 형상 변경 시 라벨 변경 (직사각형 <-> 원형)
     document.getElementById('sectionType').addEventListener('change', function() {
         const type = this.value;
-        const labelB = document.querySelector('label[for="width"]');
-        const labelH = document.querySelector('label[for="height"]');
+        const labelWidth = document.getElementById('labelWidth');
+        const groupH = document.getElementById('group_h');
         if(type === 'circle') {
-            labelB.innerText = "직경 d (mm)";
-            labelH.style.display = "none";
-            document.getElementById('height').style.display = "none";
+            labelWidth.innerText = "직경 d";
+            groupH.style.display = "none";
         } else {
-            labelB.innerText = "너비 b (mm)";
-            labelH.style.display = "block";
-            document.getElementById('height').style.display = "block";
+            labelWidth.innerText = "너비 b";
+            groupH.style.display = "block";
         }
     });
 
     function calculate() {
         const beamType = document.getElementById('beamType').value;
         const sectionType = document.getElementById('sectionType').value;
-        const L = parseFloat(document.getElementById('length')); // m
-        const rawL = parseFloat(document.getElementById('length').value);
-        const P = parseFloat(document.getElementById('load').value); // N
-        const E_gpa = parseFloat(document.getElementById('elastic').value); // GPa
-        const E = E_gpa * 1e9; // Pa (N/m^2)
+
+        // 입력값 및 단위 변환 계수 적용 (기준: 미터(m), 뉴턴(N), 파스칼(Pa))
+        const L = parseFloat(document.getElementById('length').value) * parseFloat(document.getElementById('unitLength').value);
+        const P = parseFloat(document.getElementById('load').value) * parseFloat(document.getElementById('unitLoad').value);
+        const E = parseFloat(document.getElementById('elastic').value) * parseFloat(document.getElementById('unitElastic').value);
         
         let I = 0; // 단면2차모멘트 (m^4)
-        let c = 0; // 중립축에서 최외곽까지 거리 (m)
+        let c = 0; // 중립축에서 최외곽 거리 (m)
 
         if(sectionType === 'rect') {
-            const b = parseFloat(document.getElementById('width').value) * 1e-3; // m
-            const h = parseFloat(document.getElementById('height').value) * 1e-3; // m
+            const b = parseFloat(document.getElementById('width').value) * parseFloat(document.getElementById('unitWidth').value);
+            const h = parseFloat(document.getElementById('height').value) * parseFloat(document.getElementById('unitHeight').value);
             I = (b * Math.pow(h, 3)) / 12;
             c = h / 2;
         } else {
-            const d = parseFloat(document.getElementById('width').value) * 1e-3; // m
+            const d = parseFloat(document.getElementById('width').value) * parseFloat(document.getElementById('unitWidth').value);
             I = (Math.PI * Math.pow(d, 4)) / 64;
             c = d / 2;
         }
 
         let maxDeflection = 0; // m
-        let maxMoment = 0; // N·m
+        let maxMoment = 0;     // N·m
 
         if(beamType === 'cantilever_end') {
-            // 외팔보 끝단 집중하중
-            maxDeflection = (P * Math.pow(rawL, 3)) / (3 * E * I);
-            maxMoment = P * rawL;
+            maxDeflection = (P * Math.pow(L, 3)) / (3 * E * I);
+            maxMoment = P * L;
         } else {
-            // 단순보 중앙 집중하중
-            maxDeflection = (P * Math.pow(rawL, 3)) / (48 * E * I);
-            maxMoment = (P * rawL) / 4;
+            maxDeflection = (P * Math.pow(L, 3)) / (48 * E * I);
+            maxMoment = (P * L) / 4;
         }
 
         const maxStress = (maxMoment * c) / I; // Pa
-        const maxStressMPa = maxStress / 1e6; // MPa
-        const maxDeflectionMm = maxDeflection * 1e3; // mm
+        const maxStressMPa = maxStress / 1e6;   // MPa 변환
+        const maxDeflectionMm = maxDeflection * 1e3; // mm 변환
 
         document.getElementById('resDeflection').innerText = maxDeflectionMm.toFixed(4);
         document.getElementById('resStress').innerText = maxStressMPa.toFixed(4);
