@@ -34,6 +34,10 @@
         }
         .form-group {
             margin-bottom: 15px;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
         }
         .full-width {
             grid-column: span 2;
@@ -43,26 +47,36 @@
             margin-bottom: 6px;
             font-weight: 600;
             font-size: 14px;
+            color: #334155;
         }
-        select, input {
+        .control-row {
+            display: flex;
+            gap: 10px;
+        }
+        .control-row input {
+            flex: 2;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .control-row select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: white;
+        }
+        .main-select {
+            width: 100%;
             padding: 10px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
-            box-sizing: border-box;
             font-size: 14px;
+            background-color: white;
         }
-        select { width: 100%; }
-        .input-group {
-            display: flex;
-            gap: 8px;
-        }
-        .input-group input {
-            flex: 2;
-        }
-        .input-group select {
-            flex: 1;
-        }
-        button {
+        button.calc-btn {
             grid-column: span 2;
             background-color: var(--primary-color);
             color: white;
@@ -74,7 +88,7 @@
             cursor: pointer;
             transition: background 0.2s;
         }
-        button:hover { background-color: #1d4ed8; }
+        button.calc-btn:hover { background-color: #1d4ed8; }
         .results {
             margin-top: 30px;
             padding: 20px;
@@ -97,24 +111,28 @@
 <div class="container">
     <h1>Beam Deflection & Stress Calculator</h1>
     <div class="form-grid">
+        <!-- 보의 종류 -->
         <div class="form-group">
             <label for="beamType">보의 종류 (Beam Type)</label>
-            <select id="beamType">
+            <select id="beamType" class="main-select">
                 <option value="cantilever_end">외팔보 (Cantilever - End Load)</option>
                 <option value="simply_center">단순보 (Simply Supported - Center Load)</option>
             </select>
         </div>
+        
+        <!-- 단면 형상 -->
         <div class="form-group">
             <label for="sectionType">단면 형상 (Cross Section)</label>
-            <select id="sectionType">
+            <select id="sectionType" class="main-select">
                 <option value="rect">직사각형 (Rectangular)</option>
                 <option value="circle">원형 (Circular)</option>
             </select>
         </div>
         
+        <!-- 보의 길이 L -->
         <div class="form-group">
-            <label for="length">보의 길이 L</label>
-            <div class="input-group">
+            <label for="length">보의 길이 (L)</label>
+            <div class="control-row">
                 <input type="number" id="length" value="2.0" step="0.1">
                 <select id="unitLength">
                     <option value="1">m</option>
@@ -124,9 +142,10 @@
             </div>
         </div>
 
+        <!-- 하중 P -->
         <div class="form-group">
-            <label for="load">하중 P</label>
-            <div class="input-group">
+            <label for="load">하중 (P)</label>
+            <div class="control-row">
                 <input type="number" id="load" value="1000" step="10">
                 <select id="unitLoad">
                     <option value="1">N</option>
@@ -135,9 +154,10 @@
             </div>
         </div>
         
+        <!-- 탄성계수 E -->
         <div class="form-group">
-            <label for="elastic">탄성계수 E</label>
-            <div class="input-group">
+            <label for="elastic">탄성계수 (E)</label>
+            <div class="control-row">
                 <input type="number" id="elastic" value="200" step="1">
                 <select id="unitElastic">
                     <option value="1e9">GPa</option>
@@ -146,31 +166,33 @@
             </div>
         </div>
 
+        <!-- 너비 b 또는 직경 d -->
         <div class="form-group" id="group_b">
-            <label for="width" id="labelWidth">너비 b</label>
-            <div class="input-group">
+            <label for="width" id="labelWidth">너비 (b)</label>
+            <div class="control-row">
                 <input type="number" id="width" value="50" step="1">
                 <select id="unitWidth">
-                    <option value="0.001">mm</option>
+                    <option value="0.001" selected>mm</option>
                     <option value="0.01">cm</option>
                     <option value="1">m</option>
                 </select>
             </div>
         </div>
 
+        <!-- 높이 h -->
         <div class="form-group" id="group_h">
-            <label for="height">높이 h</label>
-            <div class="input-group">
+            <label for="height">높이 (h)</label>
+            <div class="control-row">
                 <input type="number" id="height" value="100" step="1">
                 <select id="unitHeight">
-                    <option value="0.001">mm</option>
+                    <option value="0.001" selected>mm</option>
                     <option value="0.01">cm</option>
                     <option value="1">m</option>
                 </select>
             </div>
         </div>
 
-        <button onclick="calculate()">계산하기 (Calculate)</button>
+        <button class="calc-btn" onclick="calculate()">계산하기 (Calculate)</button>
     </div>
 
     <div class="results" id="resultBox">
@@ -181,16 +203,16 @@
 </div>
 
 <script>
-    // 단면 형상 변경 시 라벨 변경 (직사각형 <-> 원형)
+    // 단면 형상에 따른 라벨 변경 처리
     document.getElementById('sectionType').addEventListener('change', function() {
         const type = this.value;
         const labelWidth = document.getElementById('labelWidth');
         const groupH = document.getElementById('group_h');
         if(type === 'circle') {
-            labelWidth.innerText = "직경 d";
+            labelWidth.innerText = "직경 (d)";
             groupH.style.display = "none";
         } else {
-            labelWidth.innerText = "너비 b";
+            labelWidth.innerText = "너비 (b)";
             groupH.style.display = "block";
         }
     });
@@ -199,7 +221,7 @@
         const beamType = document.getElementById('beamType').value;
         const sectionType = document.getElementById('sectionType').value;
 
-        // 입력값 및 단위 변환 계수 적용 (기준: 미터(m), 뉴턴(N), 파스칼(Pa))
+        // 각 변수별 입력값과 해당 선택 단위를 곱하여 표준 SI 단위(m, N, Pa)로 변환
         const L = parseFloat(document.getElementById('length').value) * parseFloat(document.getElementById('unitLength').value);
         const P = parseFloat(document.getElementById('load').value) * parseFloat(document.getElementById('unitLoad').value);
         const E = parseFloat(document.getElementById('elastic').value) * parseFloat(document.getElementById('unitElastic').value);
